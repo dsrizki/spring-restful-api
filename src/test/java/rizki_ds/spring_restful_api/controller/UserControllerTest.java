@@ -2,7 +2,9 @@ package rizki_ds.spring_restful_api.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -22,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import rizki_ds.spring_restful_api.entity.User;
 import rizki_ds.spring_restful_api.model.RegisterUserRequest;
+import rizki_ds.spring_restful_api.model.UpdateUserRequest;
 import rizki_ds.spring_restful_api.model.UserResponse;
 import rizki_ds.spring_restful_api.model.WebResponse;
 import rizki_ds.spring_restful_api.repository.UserRepository;
@@ -193,6 +196,74 @@ public class UserControllerTest {
 			assertEquals(response.getMessage(), "Current user");
 			assertEquals(response.getData().getName(), "test");
 			assertEquals(response.getData().getUsername(), "test");
+		});	
+	}
+	
+	@Test
+	void updateUserUnauthorized() throws Exception {
+		UpdateUserRequest request = new UpdateUserRequest();
+		
+		
+		mockMvc.perform(
+			patch("/api/users/current")
+				.accept(MediaType.APPLICATION_JSON)
+				.header("X-Api-Key", "notfound")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request))
+		).andExpectAll(status().isUnauthorized()
+		).andDo(result -> {
+			WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
+					
+			assertNotNull(response.getCode());
+			assertNotNull(response.getMessage());
+			
+			assertEquals(response.getCode(), HttpStatus.UNAUTHORIZED.value());
+			assertEquals(response.getMessage(), "Unauthenticated");
+		});	
+	}
+	
+	@Test
+	void updateUserSuccess() throws Exception {
+		User user = new User();
+		user.setName("test");
+		user.setUsername("test");
+		user.setPassword(BCrypt.hashpw("test", BCrypt.gensalt()));
+		user.setToken("test");
+		user.setTokenExpiredAt(BigInteger.valueOf(System.currentTimeMillis() + 1_000_000L));
+		userRepository.save(user);
+
+		UpdateUserRequest request = new UpdateUserRequest();
+		request.setName("name updated");
+		request.setPassword("password updated");
+		
+		
+		mockMvc.perform(
+			patch("/api/users/current")
+				.accept(MediaType.APPLICATION_JSON)
+				.header("X-Api-Key", "test")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request))
+		).andExpectAll(status().isOk()
+		).andDo(result -> {
+			WebResponse<UserResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
+					
+			assertNotNull(response.getCode());
+			assertEquals(response.getCode(), HttpStatus.OK.value());
+
+			assertNotNull(response.getMessage());
+			assertEquals(response.getMessage(), "User successfully updated");
+
+			assertNotNull(response.getData());			
+			assertNotNull(response.getData().getName());
+			assertEquals(response.getData().getName(), "name updated");
+			assertNotNull(response.getData().getUsername());
+			assertEquals(response.getData().getUsername(), user.getUsername());
+			
+			User userDb = userRepository.findById("test").orElse(null);
+			assertEquals("name updated", userDb.getName());
+			assertNotNull(userDb);
+			assertTrue(BCrypt.checkpw("password updated", userDb.getPassword()));
+			
 		});	
 	}
 }
