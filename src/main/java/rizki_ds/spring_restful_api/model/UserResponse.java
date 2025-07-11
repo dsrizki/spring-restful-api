@@ -9,10 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class WebResponse<T> {
-	private Integer code;
-
-	private String message;
-
-	private T data;
+public class UserResponse {
+	private String username;
+	
+	private String name;
 }

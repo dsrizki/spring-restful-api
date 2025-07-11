@@ -9,6 +9,7 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.Validator;
 import rizki_ds.spring_restful_api.entity.User;
 import rizki_ds.spring_restful_api.model.RegisterUserRequest;
+import rizki_ds.spring_restful_api.model.UserResponse;
 import rizki_ds.spring_restful_api.repository.UserRepository;
 import rizki_ds.spring_restful_api.security.BCrypt;
 
@@ -25,7 +26,7 @@ public class UserService {
 	private Validator validator;
 	
 	@Transactional
-	public void register(RegisterUserRequest request) {
+	public UserResponse register(RegisterUserRequest request) {
 		validationService.validate(request);
 		
 		
@@ -39,5 +40,14 @@ public class UserService {
 		user.setName(request.getName());
 		
 		userRepository.save(user);
+		
+		return this.get(user);
+	}
+	
+	public UserResponse get(User user) {
+		return UserResponse.builder()
+			.username(user.getUsername())
+			.name(user.getName())
+			.build();
 	}
 }

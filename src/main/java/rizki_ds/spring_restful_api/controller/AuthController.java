@@ -1,6 +1,7 @@
 package rizki_ds.spring_restful_api.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,7 +26,11 @@ public class AuthController {
 	public WebResponse<TokenResponse> login(@RequestBody LoginUserRequest request) {
 		TokenResponse tokenResponse = authService.login(request);
 		
-		return WebResponse.<TokenResponse>builder().data(tokenResponse).build();
+		return WebResponse.<TokenResponse>builder()
+				.code(HttpStatus.OK.value())
+				.message("Login success")
+				.data(tokenResponse)
+				.build();
 	}
 
 }
