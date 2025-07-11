@@ -2,7 +2,6 @@ package rizki_ds.spring_restful_api.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -11,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -55,10 +55,13 @@ public class AuthControllerTest {
 				.content(objectMapper.writeValueAsString(request))
 		).andExpectAll(status().isUnauthorized()
 		).andDo(result -> {
-			WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
-			});
+			WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 
-			assertNotNull(response.getErrors());
+			assertNotNull(response.getCode());
+			assertNotNull(response.getMessage());
+			
+			assertEquals(response.getCode(), HttpStatus.UNAUTHORIZED.value());
+			assertEquals(response.getMessage(), "Username or password wrong");
 		});
 	}
 	
@@ -80,10 +83,13 @@ public class AuthControllerTest {
 				.content(objectMapper.writeValueAsString(request))
 		).andExpectAll(status().isUnauthorized()
 		).andDo(result -> {
-			WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
-			});
+			WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 			
-			assertNotNull(response.getErrors());
+			assertNotNull(response.getCode());
+			assertNotNull(response.getMessage());
+			
+			assertEquals(response.getCode(), HttpStatus.UNAUTHORIZED.value());
+			assertEquals(response.getMessage(), "Username or password wrong");
 		});
 	}
 	
@@ -105,12 +111,16 @@ public class AuthControllerTest {
 				.content(objectMapper.writeValueAsString(request))
 		).andExpectAll(status().isOk()
 		).andDo(result -> {
-			WebResponse<TokenResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
-			});
+			WebResponse<TokenResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 			
-			assertNull(response.getErrors());
+			assertNotNull(response.getCode());
+			assertNotNull(response.getMessage());
+			assertNotNull(response.getData());
 			assertNotNull(response.getData().getToken());
 			assertNotNull(response.getData().getExpiredAt());
+			
+			assertEquals(response.getCode(), HttpStatus.OK.value());
+			assertEquals(response.getMessage(), "Login success");
 			
 			User userDb = userRepository.findById("test").orElse(null);
 			assertNotNull(userDb);
