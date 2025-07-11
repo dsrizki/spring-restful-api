@@ -236,7 +236,6 @@ public class UserControllerTest {
 		request.setName("name updated");
 		request.setPassword("password updated");
 		
-		
 		mockMvc.perform(
 			patch("/api/users/current")
 				.accept(MediaType.APPLICATION_JSON)

@@ -2,8 +2,12 @@ package rizki_ds.spring_restful_api.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.math.BigInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -126,6 +130,52 @@ public class AuthControllerTest {
 			assertNotNull(userDb);
 			assertEquals(userDb.getToken(), response.getData().getToken());
 			assertEquals(userDb.getTokenExpiredAt(), response.getData().getExpiredAt());
+		});
+	}
+	
+	@Test
+	void logoutFailed() throws Exception {
+		mockMvc.perform(delete("/api/auth/logout")
+			.accept(MediaType.APPLICATION_JSON)
+		).andExpectAll(status().isUnauthorized()
+		).andDo(result -> {
+			WebResponse<TokenResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
+			
+			assertNotNull(response.getCode());
+			assertNotNull(response.getMessage());
+			
+			assertEquals(response.getCode(), HttpStatus.UNAUTHORIZED.value());
+			assertEquals(response.getMessage(), "Unauthenticated");
+		});
+	}
+	
+	@Test
+	void logoutSuccess() throws Exception {
+		User user = new User();
+		user.setName("test");
+		user.setUsername("test");
+		user.setPassword(BCrypt.hashpw("test", BCrypt.gensalt()));
+		user.setToken("test");
+		user.setTokenExpiredAt(BigInteger.valueOf(System.currentTimeMillis() + 1_000_000L));
+		userRepository.save(user);
+
+		mockMvc.perform(delete("/api/auth/logout")
+			.accept(MediaType.APPLICATION_JSON)
+			.header("X-Api-Key", "test")
+		).andExpectAll(status().isOk()
+		).andDo(result -> {
+			WebResponse<TokenResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
+			
+			assertNotNull(response.getCode());
+			assertNotNull(response.getMessage());
+			
+			assertEquals(response.getCode(), HttpStatus.OK.value());
+			assertEquals(response.getMessage(), "Logout success");
+			
+			User userDb = userRepository.findById("test").orElse(null);
+			assertNotNull(userDb);
+			assertNull(userDb.getToken());
+			assertNull(userDb.getTokenExpiredAt());
 		});
 	}
 }
